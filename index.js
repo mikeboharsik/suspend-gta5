@@ -1,9 +1,10 @@
 const http = require('http');
 const fs = require('fs');
+const path = require('path');
 const { execSync } = require('child_process');
 
-const html = fs.readFileSync('./index.html', 'utf-8');
-const psCommand = fs.readFileSync('./psCommand.ps1', 'utf-8');
+const html = fs.readFileSync(path.join(__dirname, './index.html'), 'utf-8');
+const psCommand = fs.readFileSync(path.join(__dirname, './psCommand.ps1'), 'utf-8');
 
 const port = 80;
 
