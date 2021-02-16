@@ -1,5 +1,5 @@
 const http = require('http');
-const execSync = require('child_process').execSync;
+const { execSync } = require('child_process');
 
 const port = 80;
 
@@ -88,7 +88,7 @@ const html =
 </body>
 </html>`;
 
-const ps =
+const psCommand =
 `function InjectSuspendMethodsIntoScope {
   Add-Type @"
   using System;
@@ -147,11 +147,16 @@ function Unsuspend {
 
 InjectSuspendMethodsIntoScope
 
-Suspend "gta5" | Out-Null
+if (Suspend "gta5") {
+  Sleep 15
 
-Sleep 15
+  Unsuspend "gta5" | Out-Null
+  exit 0
+} else {
+  Write-Host "Failed to find a process to suspend"
+  exit 1
+}`;
 
-Unsuspend "gta5" | Out-Null`;
 
 const server = http.createServer((req, res) => {
   new Promise((resolve, reject) => {
@@ -173,14 +178,15 @@ const server = http.createServer((req, res) => {
       if (method === 'POST' && url === '/suspend') {
         let out = '';
         try {
-          out = execSync(`pwsh -Command -`, { input: ps }).toString();        
+          out = execSync(psCommand, { shell: 'pwsh' });
         } catch(e) {
           res.statusCode = 500;
-          out = e.message;
-          console.error(e);
+          out = e.stdout.toString().trim();
         }
+        console.log(`Returning ${res.statusCode}`);
         res.end(Buffer.from(out).toString());
       } else {
+        console.log(`Returning ${res.statusCode}`);
         res.end(Buffer.from(html).toString());
       }
     });
