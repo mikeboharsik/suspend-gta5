@@ -21,7 +21,7 @@ function Suspend {
 
   $ret = $false
 
-  $processes = Get-Process | Where-Object { $_.ProcessName -Like "*$processName*" }
+  $processes = Get-Process | Where-Object { $_.ProcessName -eq $processName }
 
   foreach ($process in $processes) {
     $processId = $process.Id
@@ -29,7 +29,7 @@ function Suspend {
     $ret = $true
   }
 
-  Write-Verbose "Processes suspended: $($processes.Length)"
+  Write-Host "Processes suspended: $($processes.Length)"
 
   return $ret
 }
@@ -41,7 +41,7 @@ function Unsuspend {
 
   $ret = $false
 
-  $processes = Get-Process | Where-Object { $_.ProcessName -Like "*$processName*" }
+  $processes = Get-Process | Where-Object { $_.ProcessName -eq $processName }
 
   foreach ($process in $processes) {
     $processId = $process.Id
@@ -49,7 +49,7 @@ function Unsuspend {
     $ret = $true
   }
 
-  Write-Verbose "Processes unsuspended: $($processes.Length)"
+  Write-Host "Processes unsuspended: $($processes.Length)"
 
   return $ret
 }
@@ -62,6 +62,6 @@ if (Suspend "gta5") {
   Unsuspend "gta5" | Out-Null
   exit 0
 } else {
-  Write-Host "Failed to find a process to suspend"
+  Write-Host "<br>Failed to find a process to suspend"
   exit 1
 }

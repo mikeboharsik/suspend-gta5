@@ -64,7 +64,9 @@
         return await fetch('/suspend', { method: 'post' })
           .then(async res => { 
             if (!res.ok) {
-              setStatus(`Received a non-success response:<br>${await res.text()}`);
+              setStatus(
+                `<span style="text-decoration: underline">Received a non-success response</span><br>${await res.text()}`
+              );
             } else {
               setStatus('Waiting for user input');
             }
