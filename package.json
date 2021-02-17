@@ -6,7 +6,8 @@
   "dependencies": {},
   "scripts": {
     "start": "node index.js",
-    "win": "pkg . --target win --output bin/suspend-gta5.exe"
+    "win": "pkg . --target win --output bin/suspend-gta5.exe",
+    "win-test": "pkg . --target win --output bin/suspend-gta5.exe; bin/suspend-gta5.exe"
   },
   "bin": "index.js",
   "devDependencies": {

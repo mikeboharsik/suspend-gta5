@@ -6,7 +6,18 @@ const { execSync } = require('child_process');
 const html = fs.readFileSync(path.join(__dirname, './client/index.html'), 'utf-8');
 const psCommand = fs.readFileSync(path.join(__dirname, './ps/command.ps1'), 'utf-8');
 
-const port = 80;
+function getPortArg() {
+  const args = process.argv;
+  for (arg of args) {
+    const matches = arg.match(/port=(\d+)/);
+    if (matches) {
+      return parseInt(matches[1]);
+    }
+  }
+  return null;
+}
+
+const port = getPortArg() ?? 80;
 
 const server = http.createServer((req, res) => {
   new Promise((resolve, reject) => {
