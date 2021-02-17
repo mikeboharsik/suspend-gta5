@@ -1,3 +1,6 @@
+$output = @{}
+$exitCode = 0
+
 function InjectSuspendMethodsIntoScope {
   Add-Type @"
   using System;
@@ -29,7 +32,7 @@ function Suspend {
     $ret = $true
   }
 
-  Write-Host "Processes suspended: $($processes.Length)"
+  $output.debug = "Processes suspended: $($processes.Length)"
 
   return $ret
 }
@@ -49,7 +52,7 @@ function Unsuspend {
     $ret = $true
   }
 
-  Write-Host "Processes unsuspended: $($processes.Length)"
+  $output.debug = Write-Host "Processes unsuspended: $($processes.Length)"
 
   return $ret
 }
@@ -60,8 +63,10 @@ if (Suspend "gta5") {
   Sleep 15
 
   Unsuspend "gta5" | Out-Null
-  exit 0
 } else {
-  Write-Host "<br>Failed to find a process to suspend"
-  exit 1
+  $output.error = "Failed to find a process to suspend"
+  $exitCode = 1
 }
+
+Write-Host (ConvertTo-Json $output)
+exit $exitCode

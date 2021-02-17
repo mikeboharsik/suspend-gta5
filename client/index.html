@@ -58,14 +58,23 @@
         document.querySelector("#status").innerHTML = msg;
       }
 
+      function setButtonText(msg) {
+        document.querySelector("#button").innerHTML = msg;
+      }
+
       async function sendRequest() {
         fetching = true;
+        setButtonText('Wait for request to finish');
         setStatus('Waiting for response...');
         return await fetch('/suspend', { method: 'post' })
           .then(async res => { 
+            const { debug, error, success} = await res.json();
+
+            console.info(debug);
+
             if (!res.ok) {
               setStatus(
-                `<span style="text-decoration: underline">Received a non-success response</span><br>${await res.text()}`
+                `<span style="text-decoration: underline">Received a non-success response</span><br>${error}`
               );
             } else {
               setStatus('Waiting for user input');
@@ -78,6 +87,7 @@
           })
           .finally(() => {
             fetching = false;
+            setButtonText('Click to Suspend');
           });
       }
     </script>
