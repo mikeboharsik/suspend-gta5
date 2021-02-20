@@ -1,3 +1,7 @@
+Param (
+  $ProcessName = "gta5"
+)
+
 $output = @{}
 $exitCode = 0
 
@@ -52,17 +56,17 @@ function Unsuspend {
     $ret = $true
   }
 
-  $output.debug = Write-Host "Processes unsuspended: $($processes.Length)"
+  $output.debug = "Processes unsuspended: $($processes.Length)"
 
   return $ret
 }
 
 InjectSuspendMethodsIntoScope
 
-if (Suspend "gta5") {
+if (Suspend $ProcessName) {
   Sleep 15
 
-  Unsuspend "gta5" | Out-Null
+  Unsuspend $ProcessName | Out-Null
 } else {
   $output.error = "Failed to find a process to suspend"
   $exitCode = 1

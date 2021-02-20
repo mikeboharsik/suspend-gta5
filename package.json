@@ -6,8 +6,9 @@
   "dependencies": {},
   "scripts": {
     "start": "node index.js",
-    "win": "pkg . --target win --output bin/suspend-gta5.exe",
-    "win-test": "pkg . --target win --output bin/suspend-gta5.exe; bin/suspend-gta5.exe"
+    "win": "pushd client; yarn build; popd; pkg . --target win --output bin/suspend-gta5.exe",
+    "win-test": "yarn win; bin/suspend-gta5.exe",
+    "win-debug": "yarn win; bin/suspend-gta5.exe debug_name=discord"
   },
   "bin": "index.js",
   "devDependencies": {
