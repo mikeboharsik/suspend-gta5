@@ -10,6 +10,5 @@ This is a port of [SuspendGTA5PS](https://github.com/mikeboharsik/SuspendGTA5PS)
     * Make sure you allow the app through all applicable firewall if you want to be able to connect via another device, like a phone
     * By default, the port used is 80, so you don't need to specify a port when connecting to the server; this can be overridden by passing `port={num}` to the executable, such as `suspend-gta5.exe port=8080`
 
-2. Use a browser to connect to either `http://localhost{:port}` or whatever local IP address or hostname your PC is accessible at
-    * Use `ipconfig` in PowerShell to find your PC's IP address
-    ![ipconfig example](readme/ipconfig.png "ipconfig example")
+2. Use a browser to connect to either `http://localhost` (and append the port if you have changed it) or whatever local IP address or hostname at which your PC is accessible
+    * The web page will do its best to display the URLs on which it believes it is accessible

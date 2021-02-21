@@ -1,11 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 
 import './App.css';
 import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
+  const [ready, setReady] = useState(false);
   const [inProgress, setInProgress] = useState(false);
+
+  const [bindings, setBindings] = useState(null);
   const [message, setMessage] = useState('&nbsp');
   function resetMessage() { setMessage('&nbsp') };
 
@@ -13,8 +16,42 @@ function App() {
   const cursor = inProgress ? 'default' : 'pointer';
   const background = inProgress ? 'radial-gradient(#d00, rgba(0, 0, 0, 0))' : 'radial-gradient(#0d0, rgba(0, 0, 0, 0))';
 
-  let interval;
   let secondsRemaining = 15;
+  let interval = null;
+
+  async function getHostInfo() {
+    await fetch('/hostinfo')
+      .then(res => res.json())
+      .then(json => {
+        const newBindings = json.reduce(
+          (acc, cur) => {
+            const binding = cur.works ? (
+              <li className="binding-item">
+                <a href={`http://${cur.name}`} target="_blank">
+                  {`http://${cur.name}`}
+                </a>
+              </li>
+            ) : null;
+
+            if (binding) {
+              if (acc) {
+                return [...acc, binding];
+              }
+
+              return [binding];
+            }
+
+            return acc;
+          },
+          null,
+        );
+
+        setBindings(newBindings);
+      })
+      .finally(() => {
+        setReady(true);
+      });
+  }
 
   async function suspend() {
     if (inProgress) {
@@ -22,19 +59,20 @@ function App() {
     }
 
     toast.dismiss();
-    setInProgress(true);
+    setInProgress(true);   
 
-    interval = setInterval(() => {
-      if (secondsRemaining < 0) {
-        clearInterval(interval);
-      } else {
-        setMessage(`${secondsRemaining} seconds remaining`);
-        --secondsRemaining;
-      }
-    }, 1000);
+    interval = setInterval(
+      () => {
+        if (secondsRemaining >= 0) {
+          setMessage(`${secondsRemaining} seconds remaining`);
+          --secondsRemaining;
+        }
+      },
+      1000,
+    );
 
     await fetch('/suspend', { method: 'POST' })
-      .then(async res => await res.json())
+      .then(res => res.json())
       .then(json => {
         if (json.error) {
           toast(`Error: ${json.error}`, { autoClose: false });
@@ -46,8 +84,17 @@ function App() {
       .finally(() => {
         setInProgress(false);
         clearInterval(interval);
+        interval = null;
         resetMessage();
       });
+  }
+
+  useEffect(() => {
+    getHostInfo();
+  }, []);
+
+  if (!ready) {
+    return null;
   }
 
   return (
@@ -58,28 +105,23 @@ function App() {
       />
       <div
         onClick={suspend}
-        style={{
-          alignItems: 'center',
-          background,
-          border: '0.5em solid black',
-          borderRadius: '50%',
-          cursor,
-          display: 'flex',
-          fontSize: '0.45em',
-          height: '128px',
-          justifyContent: 'center',
-          textAlign: 'center',
-          textShadow: '0px 0px 2px #000, 0px 0px 2px #000, 0px 0px 2px #000, 0px 0px 2px #000',
-          userSelect: 'none',
-          width: '128px',
-        }}>
-        <span>{buttonText}</span>
+        style={{ background, cursor }}
+        className="button">
+        <span>
+          {buttonText}
+        </span>
       </div>
       <div>
         <span
           style={{ fontSize: '0.6em' }}
           dangerouslySetInnerHTML={{ __html: message }}
         />
+      </div>
+      <div style={{ fontSize: '0.5em', marginTop: '3em' }}>
+        <span>This page is accessible at:</span>
+        <ul style={{ listStyleType: 'none', marginBlockStart: 0, paddingLeft: '2em' }}>
+          {bindings}
+        </ul>
       </div>
     </div>
   );

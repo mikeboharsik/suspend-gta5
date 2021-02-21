@@ -10,6 +10,33 @@
   overflow: hidden;
 }
 
+.binding-item {
+  color: #fff;
+  margin-left: -1em;
+}
+
+.binding-item a {
+  text-decoration: none;
+}
+
+.binding-item a:visited {
+  color: #fff;
+}
+
+.button {
+  align-items: center;
+  border: 0.5em solid black;
+  border-radius: 50%;
+  display: flex;
+  font-size: 0.45em;
+  height: 128px;
+  justify-content: center;
+  text-align: center;
+  text-shadow: 0px 0px 2px #000, 0px 0px 2px #000, 0px 0px 2px #000, 0px 0px 2px #000;
+  user-select: none;
+  width: 128px;
+}
+
 .loader,
 .loader:after {
   border-radius: 50%;

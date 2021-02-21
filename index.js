@@ -2,6 +2,9 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const { exec } = require('child_process');
+const { clear } = require('console');
+
+clear();
 
 const html = fs.readFileSync(path.join(__dirname, './client/prod/index.html'), 'utf-8');
 let psCommand = fs.readFileSync(path.join(__dirname, './ps/command.ps1'), 'utf-8');
@@ -37,49 +40,116 @@ if (debug_name) {
   psCommand = psCommand.replace('$ProcessName = "gta5"', `$ProcessName = "${debug_name}"`);
 }
 
+function get(hostname) {
+  return new Promise((resolve, reject) => {
+    const req = http.request({ hostname, path: '/' }, res => {
+      const buf = [];
+      res.on('data', d => {
+        buf.push(d);
+      });
+      res.on('end', () => {
+        resolve(buf.join());
+      });
+    });
+
+    req.on('error', e => {
+      reject(e);
+    });
+
+    req.end();
+  });
+}
+
 function handleRequest({ req, res }) {
+  function log(...args) {
+    const { id } = req;
+
+    console.log(`${new Date().toISOString()} [${id}]:`, ...args)
+  }
+
   try {
-    const { client, method, url } = req;
+    const requestId = parseInt(Math.random() * 1000000).toString().padStart(6, '0');
+    req.id = requestId;
+
+    const { client, headers, method, url } = req;
     const { remoteAddress } = client;
 
-    console.log(`${remoteAddress} => ${method} ${url}`);
+    const referer = headers.referer ? `via ${headers.referer}` : '';
+    log(`${remoteAddress} => ${method} ${url} ${referer}`);
 
     let out = '';
     if (method === 'POST' && url === '/suspend') {
       if (suspendInProgress) {
+        const msg = 'Another suspend request is currently in progress';
         res.statusCode = 429;
-        res.send(JSON.stringify({ error: 'Another suspend request is currently in progress' }));
-        return;
+        throw new Error(msg);
       }
 
       suspendInProgress = true;
       exec(psCommand, { shell: 'pwsh'}, (err, stdout, stderr) => {
         try {
           if (stderr) {
-            res.statusCode = 500;
             out = stderr;
           } else {
             out = stdout;
           }
-          res.header('Content-Type', 'application/json');
-          res.send(out);
+          res.json(out);
         } catch(e) {
           throw e;
         } finally {
           suspendInProgress = false;
         }
       });
-    } else {
-      console.log(`Returning ${res.statusCode}`);
+    } else if (url === '/hostinfo') {
+      exec('ipconfig', (err, stdout, stderr) => {
+        if (stderr) {
+          res.statusCode = 500;
+          out = JSON.stringify({ error: stderr });
+        } else {
+          const ipconfig = stdout;
 
-      out = html;
-      res.header('Content-Type', 'text/html');
-      res.send(out);
+          exec('hostname', async (err, stdout, stderr) => {
+            const hostname = stdout.trim();
+            
+            const dnsMatches = Array.from(ipconfig.matchAll(/Connection-specific DNS Suffix.+: (\S+)/g))
+              .reduce((all, match) => {
+                return [`${hostname}.${match[1].trim()}`, ...all];
+              }, []);
+
+            const ipMatches = Array.from(ipconfig.matchAll(/IPv4 Address.+: (\S+)/g))
+              .reduce((all, match) => {
+                return [match[1].trim(), ...all];
+              }, []);
+
+            const bindings = [...ipMatches, ...dnsMatches].reduce((acc, cur) => [...acc, { name: cur, works: false }], []);
+
+            const jobs = bindings.map(binding =>
+              new Promise(async (resolve, reject) => {
+                try {
+                  const { name } = binding;
+                  await get(name);
+                  binding.works = true;
+                  resolve(true);
+                } catch {
+                  reject(false);
+                }
+              })
+            );
+
+            try { await Promise.allSettled(jobs) } catch { }
+
+            res.json(bindings);
+          });
+        }
+      });
+    } else if (url.includes('\.map')) {
+      res.statusCode = 404;
+      res.send();
+    } else {
+      res.html(html);
     }
   } catch (e) {
-    res.statusCode = 500;
-    res.header('Content-Type', 'application/json');
-    res.send(JSON.stringify({ error: e.message }));
+    res.json({ error: e.message });
   }
 }
 
@@ -93,10 +163,25 @@ function handleHttp(req, res) {
       req.body = body;
 
       res.header = function(name, value) { this.setHeader(name, value) };
-      res.send = function(str) { this.end(str) };
+      res.html = function(html) { this.header('Content-Type', 'text/html'); this.end(html) };
+      res.send = function(str) { this.header('Content-Type', 'text/plain'); this.end(str) };
+      res.json = function(ob) {
+        try {
+          const par = typeof ob === 'string' ? JSON.parse(ob) : ob;
+
+          if (par.error && this.statusCode < 400) { this.statusCode = 500 }
+
+          this.header('Content-Type', 'application/json');
+          this.end(JSON.stringify(par));
+        } catch(e) {
+          console.warn(e);
+          this.send(ob);
+        }
+      };
 
       resolve({ req, res });
-    });
+    })
+    .on('error', e => reject(e));
   })
   .then(handleRequest);
 }
