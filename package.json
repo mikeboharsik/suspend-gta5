@@ -7,9 +7,9 @@
   "scripts": {
     "start": "node index.js",
     "watch": "nodemon index.js",
-    "win": "pushd client; yarn build; popd; pkg . --target win --output bin/suspend-gta5.exe",
-    "win-debug": "yarn win; bin/suspend-gta5.exe debug_name=discord",
-    "win-test": "yarn win; bin/suspend-gta5.exe"
+    "build": "pushd client; yarn build; popd; pkg . --target win --output bin/suspend-gta5.exe",
+    "debug": "yarn build; bin/suspend-gta5.exe debug_name=discord",
+    "test": "yarn build; bin/suspend-gta5.exe"
   },
   "bin": "index.js",
   "devDependencies": {
