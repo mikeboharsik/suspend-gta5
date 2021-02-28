@@ -1,57 +1,117 @@
 import { useEffect, useState } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
+import { io } from 'socket.io-client';
 
 import './App.css';
 import 'react-toastify/dist/ReactToastify.css';
 
+const protocol = 'http://';
+let { host } = window.location;
+
+if (process.env.NODE_ENV === 'development') {
+  host = 'localhost';
+}
+
+const networkConfig = `${protocol}${host}`;
+const hostInfoPath = `${networkConfig}/hostinfo`;
+const suspendPath = `${networkConfig}/suspend`;
+
+const baseBinding = { name: 'localhost', works: true };
+
+function generateJsxFromHostInfo(hostInfo) {
+  const allBindings = [baseBinding, ...hostInfo];
+
+  const newBindings = allBindings.reduce(
+    (acc, cur) => {
+      const binding = cur.works ? (
+        <li key={cur.name} className="binding-item">
+          <a
+            href={`http://${cur.name}`}
+            rel="noreferrer"
+            target="_blank"
+          >
+            {`http://${cur.name}`}
+          </a>
+        </li>
+      ) : null;
+
+      if (binding) {
+        if (acc) {
+          return [...acc, binding];
+        }
+
+        return [binding];
+      }
+
+      return acc;
+    },
+    null,
+  );
+
+  return newBindings;
+}
+
+function useHostInfo() {
+  const [hostInfo, setHostInfo] = useState(null);
+  const [jsx, setJsx] = useState(null);
+
+  useEffect(
+    () => {
+      fetch(hostInfoPath)
+        .then(res => res.json())
+        .then(json => {
+          setHostInfo(json);
+          setJsx(generateJsxFromHostInfo(json));
+        });
+    },
+    []
+  );
+
+  return [hostInfo, jsx];
+}
+
 function App() {
+  const [, bindings] = useHostInfo();
+
   const [ready, setReady] = useState(false);
   const [inProgress, setInProgress] = useState(false);
 
-  const [bindings, setBindings] = useState(null);
   const [message, setMessage] = useState('&nbsp');
   function resetMessage() { setMessage('&nbsp') };
 
-  const buttonText = inProgress ? (<div class="loader">Loading...</div>) : 'Click/tap to suspend';
+  const buttonText = inProgress ? (<div className="loader">Loading...</div>) : 'Click/tap to suspend';
   const cursor = inProgress ? 'default' : 'pointer';
   const background = inProgress ? 'radial-gradient(#d00, rgba(0, 0, 0, 0))' : 'radial-gradient(#0d0, rgba(0, 0, 0, 0))';
 
-  let secondsRemaining = 15;
-  let interval = null;
+  useEffect(() => {
+    io('http://localhost', { autoConnect: true })
+      .onAny((event, ...args) => {
+        console.debug({ event, args });
 
-  async function getHostInfo() {
-    await fetch('/hostinfo')
-      .then(res => res.json())
-      .then(json => {
-        const newBindings = json.reduce(
-          (acc, cur) => {
-            const binding = cur.works ? (
-              <li className="binding-item">
-                <a href={`http://${cur.name}`} target="_blank">
-                  {`http://${cur.name}`}
-                </a>
-              </li>
-            ) : null;
-
-            if (binding) {
-              if (acc) {
-                return [...acc, binding];
-              }
-
-              return [binding];
-            }
-
-            return acc;
-          },
-          null,
-        );
-
-        setBindings(newBindings);
-      })
-      .finally(() => {
-        setReady(true);
+        switch (event) {
+          case 'SuspendSuccess':
+            setMessage("Waiting for unsuspend...");
+            break;
+          case 'UnsuspendSuccess':
+            resetMessage();
+            setInProgress(false);
+            toast('Success!');
+            break;
+          case 'SuspendError':
+            resetMessage();
+            setInProgress(false);
+            toast(`Error: ${args}`);
+            break;
+          default: break;
+        }
       });
-  }
+  }, []);
+
+  useEffect(() => {
+    if (bindings) {
+      setReady(true);
+    }
+  }, [bindings])
 
   async function suspend() {
     if (inProgress) {
@@ -59,39 +119,12 @@ function App() {
     }
 
     toast.dismiss();
-    setInProgress(true);   
+    setInProgress(true);    
 
-    interval = setInterval(
-      () => {
-        if (secondsRemaining >= 0) {
-          setMessage(`${secondsRemaining} seconds remaining`);
-          --secondsRemaining;
-        }
-      },
-      1000,
-    );
+    await fetch(suspendPath, { method: 'POST' });
 
-    await fetch('/suspend', { method: 'POST' })
-      .then(res => res.json())
-      .then(json => {
-        if (json.error) {
-          toast(`Error: ${json.error}`, { autoClose: false });
-          return;
-        }
-
-        toast('Success!');
-      })
-      .finally(() => {
-        setInProgress(false);
-        clearInterval(interval);
-        interval = null;
-        resetMessage();
-      });
+    setMessage("Submitted suspend request...");
   }
-
-  useEffect(() => {
-    getHostInfo();
-  }, []);
 
   if (!ready) {
     return null;
