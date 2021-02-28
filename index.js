@@ -77,6 +77,10 @@ function handleRequest({ req, res }) {
     const referer = headers.referer ? `via ${headers.referer}` : '';
     log(`${remoteAddress} => ${method} ${url} ${referer}`);
 
+    if (remoteAddress === '127.0.0.1') {
+      res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+    }
+
     let out = '';
     if (method === 'POST' && url === '/suspend') {
       if (suspendInProgress) {
