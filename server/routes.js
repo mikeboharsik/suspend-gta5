@@ -4,10 +4,10 @@ const fsPromises = require('fs/promises');
 const path = require('path');
 const { exec } = require('child_process');
 
-const { getArg } = require('./getArg');
+const { getArg } = require('./util/getArg');
 
-const html = fs.readFileSync(path.join(__dirname, './client/prod/index.html'), 'utf-8');
-const psText = fs.readFileSync(path.join(__dirname, './ps/Set-ProcessSuspension.ps1'), 'utf-8');
+const html = fs.readFileSync(path.join(__dirname, '../client/prod/index.html'), 'utf-8');
+const psText = fs.readFileSync(path.join(__dirname, '../ps/Set-ProcessSuspension.ps1'), 'utf-8');
 
 let suspensionInProgress = false;
 

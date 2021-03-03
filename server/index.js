@@ -1,7 +1,7 @@
 const http = require('http');
 const { clear } = require('console');
 
-const { getArg } = require('./getArg');
+const { getArg } = require('./util/getArg');
 const { routes } = require('./routes');
 
 clear();

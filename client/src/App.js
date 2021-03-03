@@ -78,7 +78,7 @@ function App() {
   const [message, setMessage] = useState('&nbsp');
   function resetMessage() { setMessage('&nbsp') };
 
-  const buttonText = inProgress ? (<div className="loader">Loading...</div>) : 'Click/tap to suspend';
+  const buttonText = inProgress ? <div className="loader">Loading...</div> : 'Click/tap to suspend';
   const cursor = inProgress ? 'default' : 'pointer';
   const background = inProgress ? 'radial-gradient(#d00, rgba(0, 0, 0, 0))' : 'radial-gradient(#0d0, rgba(0, 0, 0, 0))';
 
@@ -90,6 +90,7 @@ function App() {
         switch (event) {
           case 'SuspendSuccess':
             setMessage("Waiting for unsuspend...");
+            setInProgress(true);
             break;
           case 'UnsuspendSuccess':
             resetMessage();
