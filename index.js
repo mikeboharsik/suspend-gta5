@@ -33,6 +33,7 @@ async function handleRequest({ req, res }) {
     ) || {});
 
     if (!handler) {
+      console.error(`Could not find handler for ${method} ${url}`);
       res.statusCode = 404;
       return res.send();
     }
@@ -100,7 +101,7 @@ function handleHttp(req, res) {
 }
 
 const server = http.createServer(handleHttp)
-  .listen(port, '0.0.0.0')
+  .listen(port, '0.0.0.0');
 
 io = require("socket.io")(server, {
   cors: {

@@ -5,14 +5,13 @@ import { io } from 'socket.io-client';
 import './App.css';
 import 'react-toastify/dist/ReactToastify.css';
 
-const protocol = 'http://';
-let { host } = window.location;
+let { hostname, protocol } = window.location;
 
 if (process.env.NODE_ENV === 'development') {
-  host = 'localhost';
+  hostname = 'localhost';
 }
 
-const networkConfig = `${protocol}${host}`;
+const networkConfig = `${protocol}//${hostname}`;
 const hostInfoPath = `${networkConfig}/hostinfo`;
 const suspendPath = `${networkConfig}/suspend`;
 
@@ -26,11 +25,11 @@ function generateJsxFromHostInfo(hostInfo) {
       const binding = cur.works ? (
         <li key={cur.name} className="binding-item">
           <a
-            href={`http://${cur.name}`}
+            href={`${protocol}//${cur.name}`}
             rel="noreferrer"
             target="_blank"
           >
-            {`http://${cur.name}`}
+            {`${protocol}//${cur.name}`}
           </a>
         </li>
       ) : null;
@@ -84,7 +83,7 @@ function App() {
   const background = inProgress ? 'radial-gradient(#d00, rgba(0, 0, 0, 0))' : 'radial-gradient(#0d0, rgba(0, 0, 0, 0))';
 
   useEffect(() => {
-    io('http://localhost', { autoConnect: true })
+    io(networkConfig, { autoConnect: true })
       .onAny((event, ...args) => {
         console.debug({ event, args });
 
