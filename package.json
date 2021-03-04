@@ -6,6 +6,7 @@
   "scripts": {
     "build": "pushd client; yarn build; popd; pushd server; yarn build",
     "debug": "pushd server; yarn debug",
+    "deploy-local": "Start-Process pwsh -Verb runAs ./util/deploy-local.ps1",
     "test": "pushd server; yarn test"
   }
 }
