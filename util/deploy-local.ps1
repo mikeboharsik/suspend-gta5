@@ -8,4 +8,4 @@ if (!(Test-Path $destinationRelativeToSystemRoot)) {
 }
 
 yarn build
-cp ./bin/* $destination
+cp ../bin/* $destination
