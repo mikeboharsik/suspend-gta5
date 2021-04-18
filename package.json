@@ -8,5 +8,8 @@
     "debug": "pushd server; yarn debug",
     "deploy-local": "Start-Process pwsh -Verb runAs ./util/deploy-local.ps1",
     "test": "pushd server; yarn test"
+  },
+  "dependencies": {
+    "prompt-sync": "^4.2.0"
   }
 }

@@ -1,9 +1,9 @@
 const http = require('http');
 const fs = require('fs');
-const fsPromises = require('fs/promises');
 const path = require('path');
 const { exec } = require('child_process');
 
+const { get } = require('./util/get');
 const { getArg } = require('./util/getArg');
 
 const html = fs.readFileSync(path.join(__dirname, '../client/prod/index.html'), 'utf-8');
@@ -20,26 +20,6 @@ const root = {
     res.html(html);
   },
 };
-
-function get(hostname) {
-  return new Promise((resolve, reject) => {
-    const req = http.request({ hostname, path: '/' }, res => {
-      const buf = [];
-      res.on('data', d => {
-        buf.push(d);
-      });
-      res.on('end', () => {
-        resolve(buf.join());
-      });
-    });
-
-    req.on('error', e => {
-      reject(e);
-    });
-
-    req.end();
-  });
-}
 
 function getIpconfig() {
   return new Promise((resolve, reject) => {
